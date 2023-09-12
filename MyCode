@@ -1,0 +1,73 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import zipfile
+import os
+
+# Specify the path to the ZIP file
+zip_file_path = "C:/Users/tanus/Downloads/archive.zip"
+
+# Check if the ZIP file exists
+if not os.path.exists(zip_file_path):
+    print(f"ZIP file not found at: {zip_file_path}")
+else:
+    # Specify the name of the CSV file inside the ZIP archive
+    csv_file_name = "winequality.csv"
+
+    # Extract the CSV file from the ZIP archive
+    with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+        # List the contents of the ZIP file for debugging purposes
+        zip_contents = zip_ref.namelist()
+        print(f"Contents of the ZIP file: {zip_contents}")
+
+        if csv_file_name in zip_contents:
+            zip_ref.extract(csv_file_name, path=".")
+            print(f"Extracted {csv_file_name} from the ZIP file.")
+
+            # Load the extracted CSV file into a DataFrame
+            wine_data = pd.read_csv(csv_file_name)
+
+            # Define a function to classify wine quality into categories (e.g., low, medium, high)
+            def classify_quality(quality):
+                if quality <= 5:
+                    return 'low'
+                elif quality <= 7:
+                    return 'medium'
+                else:
+                    return 'high'
+
+            # Apply the classify_quality function to create the target variable
+            wine_data['quality'] = wine_data['quality'].apply(classify_quality)
+
+            # Split the dataset into features (X) and target (y)
+            X = wine_data.drop('quality', axis=1)
+            y = wine_data['quality']
+
+            # Split the data into training and testing sets
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+            # Standardize the features
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_train)
+            X_test = scaler.transform(X_test)
+
+            # Train a Random Forest Classifier
+            clf = RandomForestClassifier(n_estimators=100, random_state=42)
+            clf.fit(X_train, y_train)
+
+            # Make predictions on the test set
+            y_pred = clf.predict(X_test)
+
+            # Evaluate the model
+            accuracy = accuracy_score(y_test, y_pred)
+            print(f'Accuracy: {accuracy:.2f}')
+
+            # Generate a classification report
+            report = classification_report(y_test, y_pred)
+            print(report)
+
+        else:
+            print(f"{csv_file_name} not found in the ZIP file.")
